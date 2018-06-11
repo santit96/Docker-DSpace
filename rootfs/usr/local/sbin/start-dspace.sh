@@ -15,6 +15,12 @@ if [ -n $POSTGRES_DB_HOST -a -n $POSTGRES_DB_PORT ]; then
     wait-for-postgres.sh $POSTGRES_DB_HOST setup-postgres.sh
 fi
 
+#if staistics/data was mounted as a volume, then change permissions to dspace:dspace user and group
+if [ -d "/dspace/solr/statistics/data" ]; then
+    echo "Changing user permissions user over /dspace/solr/statistics/data directory..."
+    chown -R dspace:dspace "/dspace/solr/statistics/data"
+fi
+
 # Remove unused webapps
 # see https://wiki.duraspace.org/display/DSDOC5x/Performance+Tuning+DSpace
 if [ -n "$DSPACE_WEBAPPS" ]; then

@@ -43,16 +43,14 @@ if [ $SCHEMA_EXISTS -eq 1 ]; then
   createdb "$POSTGRES_SCHEMA" -h "$POSTGRES_DB_HOST" -p "$POSTGRES_DB_PORT" -U "$POSTGRES_ADMIN_USER" -O "$POSTGRES_USER" --encoding=UTF8
 
   echo "Database '${POSTGRES_SCHEMA}' created"
-fi
 
-if [ $SCHEMA_EXISTS -eq 1 ]; then
   # Create the pgcrypto extension (for DSpace 6) 
   echo "Creating pgcrypto extension..."
   psql -U "$POSTGRES_ADMIN_USER" -h "$POSTGRES_DB_HOST" -p "$POSTGRES_DB_PORT" -d "$POSTGRES_SCHEMA" -c "CREATE EXTENSION pgcrypto;"
  
   #Import SQL data if exists respecive import SQL data file
   if [ -f "$SQL_IMPORT_FILE" ]; then
-    echo "Importing Data from SQL file..."
+    echo "Importing Data from SQL file..."  
     psql -h "$POSTGRES_DB_HOST"  -p "$POSTGRES_DB_PORT" -d "$POSTGRES_SCHEMA" -U "$POSTGRES_ADMIN_USER" -f "$SQL_IMPORT_FILE"
     echo "Assgin imported tables ownership to user '$POSTGRES_USER'..."
      #TABLES
