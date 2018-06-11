@@ -28,8 +28,8 @@ services:
       - POSTGRES_DB_HOST=dspace_db
     volumes:
       - ./custom_data/postgresql_import_sql/00-dspace_data.sql:/tmp/dspace_data.sql
+      - ./custom_data/solr/statistics/data:/dspace/solr/statistics/data
 
 networks:
     dspacenet:
-
 # vim: set sw=2 ts=2:
