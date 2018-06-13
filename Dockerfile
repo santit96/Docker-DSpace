@@ -56,6 +56,14 @@ COPY config/local.cfg dspace
 COPY config/webapps/xmlui.xml $CATALINA_HOME/conf/Catalina/localhost/xmlui.xml
 COPY config/webapps/solr.xml $CATALINA_HOME/conf/Catalina/localhost/solr.xml
 
+USER root
+
+RUN sed -i "s#docBase=\"\$DSPACE_HOME#docBase=\"$DSPACE_HOME#" $CATALINA_HOME/conf/Catalina/localhost/xmlui.xml
+RUN sed -i "s#docBase=\"\$DSPACE_HOME#docBase=\"$DSPACE_HOME#" $CATALINA_HOME/conf/Catalina/localhost/solr.xml
+
+USER dspace
+
+
 # Set DSpace hostname and port in build.properties
 RUN sed -i -e "s/DSPACE_HOSTNAME/$DSPACE_HOSTNAME/" -e "s/DSPACE_PROXY_PORT/$DSPACE_PROXY_PORT/" dspace/local.cfg
 
