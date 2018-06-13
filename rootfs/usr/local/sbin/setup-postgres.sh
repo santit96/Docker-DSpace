@@ -18,7 +18,7 @@ if [ -z $POSTGRES_DB_HOST -a -z $POSTGRES_DB_PORT ]; then
   exit 1
 fi
 
-DSPACE_CFG="/dspace/config/local.cfg"
+DSPACE_CFG="/tmp/dspace/local.cfg"
 if [ -n $POSTGRES_ADMIN_PASSWORD ]; then
   export PGPASSWORD=$POSTGRES_ADMIN_PASSWORD
 fi
@@ -75,6 +75,3 @@ sed -i "s#db.url = jdbc:postgresql://localhost:5432/dspace#db.url = jdbc:postgre
 sed -i "s#db.username = dspace#db.username = ${POSTGRES_USER}#" ${DSPACE_CFG}
 sed -i "s#db.password = dspace#db.password = ${POSTGRES_PASSWORD}#" ${DSPACE_CFG}
 echo "DSpace configuration changed"
-
-# Create DSpace administrator
-su - dspace -c "dspace create-administrator -e ${ADMIN_EMAIL:-devops@1science.com} -f ${ADMIN_FIRSTNAME:-DSpace} -l ${ADMIN_LASTNAME:-Admin} -p ${ADMIN_PASSWD:-admin123} -c ${ADMIN_LANGUAGE:-en}"

@@ -1,5 +1,9 @@
 version: '2'
 
+volumes:
+  dspace-source:
+  m2:
+
 services:
   database:
     container_name: dspace_db
@@ -25,10 +29,13 @@ services:
     networks:
         - dspacenet
     environment:
+      - POSTGRES_DB_PORT=5432
       - POSTGRES_DB_HOST=dspace_db
     volumes:
-      - ./custom_data/postgresql_import_sql/00-dspace_data.sql:/tmp/dspace_data.sql
-      - ./custom_data/solr/statistics/data:/dspace/solr/statistics/data
+      - dspace-source:/tmp/dspace/
+      - m2:/dspace/.m2/
+      - ./custom_data/postgresql_import_sql/dspace_cic-2017-06-22_0840.sql:/tmp/dspace_data.sql
+      #- ./custom_data/solr/statistics/data:/dspace/solr/statistics/data
 
 networks:
     dspacenet:

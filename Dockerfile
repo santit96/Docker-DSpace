@@ -3,7 +3,7 @@
 #
 
 FROM tomcat:7-jre8
-LABEL maintainer "Facundo Adorno <adorno.facundo@gmail.com>"
+LABEL maintainer "Santiago Tettamanti <santi.tettamanti96@gmail.com>"
 
 # Allow custom DSpace hostname at build time (default to localhost if undefined)
 # To override, pass --build-arg DSPACE_HOSTNAME=repo.example.org to docker build
@@ -14,9 +14,8 @@ ARG DSPACE_HOSTNAME=localhost
 ARG DSPACE_PROXY_PORT=8080
 
 # Environment variables
-ENV DSPACE_VERSION=6.1 \
-    DSPACE_GIT_URL=https://github.com/FacundoAdorno/DSpace.git \
-    DSPACE_GIT_REVISION=tesina_discovery_xmlui \
+ENV DSPACE_VERSION=6.2 \
+    DSPACE_GIT_URL=https://github.com/CICBA/DSpace.git \
     DSPACE_HOME=/dspace
 ENV CATALINA_OPTS="-Xmx512M -Dfile.encoding=UTF-8" \
     MAVEN_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1" \
@@ -28,6 +27,7 @@ WORKDIR /tmp
 RUN apt-get update && apt-get install -y \
     ant \
     maven \
+    nano \
     postgresql-client \
     git \
     imagemagick \
@@ -47,26 +47,25 @@ RUN useradd -r -s /bin/bash -m -d "$DSPACE_HOME" dspace \
 USER dspace
 
 # Clone DSpace source to $WORKDIR/dspace
-RUN git clone --depth=1 --branch "$DSPACE_GIT_REVISION" "$DSPACE_GIT_URL" dspace
+RUN git clone --depth=1 "$DSPACE_GIT_URL" dspace
 
 # Copy customized local.cfg (taken straight from the DSpace source
 # tree and modified only to add bits to make it easier to replace hostname
 # and port below)
 COPY config/local.cfg dspace
+COPY config/webapps/xmlui.xml $CATALINA_HOME/conf/Catalina/localhost/xmlui.xml
+COPY config/webapps/solr.xml $CATALINA_HOME/conf/Catalina/localhost/solr.xml
 
 # Set DSpace hostname and port in build.properties
 RUN sed -i -e "s/DSPACE_HOSTNAME/$DSPACE_HOSTNAME/" -e "s/DSPACE_PROXY_PORT/$DSPACE_PROXY_PORT/" dspace/local.cfg
 
-# Build DSpace and avoid to compile unnecesaries projects
-RUN cd dspace && mvn package -P \!dspace-jspui,\!dspace-rdf,\!dspace-sword,\!dspace-swordv2,\!dspace-xmlui-mirage2,\!dspace-lni
-
 # Install compiled applications to $CATALINA_HOME
-RUN cd dspace/dspace/target/dspace-installer \
-    && ant init_installation init_configs install_code copy_webapps init_geolite \
-    && rm -rf "$CATALINA_HOME/webapps" \
-    && mkdir "$CATALINA_HOME/webapps" \
-    && mv -f "$DSPACE_HOME/webapps/xmlui" "$CATALINA_HOME/webapps" \
-    && mv -f "$DSPACE_HOME/webapps/solr" "$CATALINA_HOME/webapps"
+#RUN cd dspace/dspace/target/dspace-installer \
+#    && ant init_installation init_configs install_code copy_webapps init_geolite \
+#    && rm -rf $CATALINA_HOME/webapps \
+#    && mkdir $CATALINA_HOME/webapps \
+#    && mv -f $DSPACE_HOME/webapps/xmlui $CATALINA_HOME/webapps \
+#    && mv -f $DSPACE_HOME/webapps/solr $CATALINA_HOME/webapps
 
 # Change back to root user for cleanup
 USER root
@@ -83,14 +82,10 @@ COPY rootfs /
 # Docker's COPY instruction always sets ownership to the root user, so we need
 # to explicitly change ownership of those files and directories that we copied
 # from rootfs.
-RUN chown dspace:dspace $DSPACE_HOME $DSPACE_HOME/bin/*
+RUN chown dspace:dspace $DSPACE_HOME
 
 # Make sure the crontab uses the correct DSpace directory
 RUN sed -i "s#DSPACE=/dspace#DSPACE=$DSPACE_HOME#" /etc/cron.d/dspace-maintenance-tasks
-
-RUN rm -rf "$DSPACE_HOME/.m2" /tmp/*; \
-    apt-get remove -y ant maven git openjdk-8-jdk-headless \
-    && apt-get -y autoremove
 
 WORKDIR $DSPACE_HOME
 
@@ -102,5 +97,5 @@ RUN echo "Debian GNU/Linux `cat /etc/debian_version` image. (`uname -rsv`)" >> /
     && echo "container as the dspace user, ie: docker exec -it -u dspace dspace /bin/bash" >> /root/.built
 
 EXPOSE 8080
-# will run `start-dspace.sh` script as root, then drop to dspace user
+# will run `start-dspace.sh` script as root
 CMD ["start-dspace.sh"]

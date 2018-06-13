@@ -21,18 +21,4 @@ if [ -d "/dspace/solr/statistics/data" ]; then
     chown -R dspace:dspace "/dspace/solr/statistics/data"
 fi
 
-# Remove unused webapps
-# see https://wiki.duraspace.org/display/DSDOC5x/Performance+Tuning+DSpace
-if [ -n "$DSPACE_WEBAPPS" ]; then
-    webapps=($(ls $CATALINA_HOME/webapps | tr -d '/'))
-    webapps_to_keep=($(echo "$DSPACE_WEBAPPS solr"))
-    for element in ${webapps_to_keep[@]}; do
-      webapps=(${webapps[@]/$element})
-    done
-    for webapp in ${webapps[@]}; do
-      rm -rf $CATALINA_HOME/webapps/$webapp
-    done
-fi
-
-# Start Tomcat (with full path to catalina.sh, because su resets our $PATH)
 exec su - dspace -c "$CATALINA_HOME/bin/catalina.sh run"
