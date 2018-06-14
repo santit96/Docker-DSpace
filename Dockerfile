@@ -97,6 +97,12 @@ RUN sed -i "s#DSPACE=/dspace#DSPACE=$DSPACE_HOME#" /etc/cron.d/dspace-maintenanc
 
 WORKDIR $DSPACE_HOME
 
+USER dspace
+
+RUN mkdir .m2
+
+USER root
+
 # Build info
 RUN echo "Debian GNU/Linux `cat /etc/debian_version` image. (`uname -rsv`)" >> /root/.built \
     && echo "- with `java -version 2>&1 | awk 'NR == 2'`" >> /root/.built \
@@ -105,5 +111,6 @@ RUN echo "Debian GNU/Linux `cat /etc/debian_version` image. (`uname -rsv`)" >> /
     && echo "container as the dspace user, ie: docker exec -it -u dspace dspace /bin/bash" >> /root/.built
 
 EXPOSE 8080
+
 # will run `start-dspace.sh` script as root
 CMD ["start-dspace.sh"]
