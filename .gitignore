@@ -1,2 +1,2 @@
 dspace-source/*
-custom_data/postgresql_import_sql/*
+custom_data/postgresql_import_sql/00-dspace_data.sql
