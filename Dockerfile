@@ -16,7 +16,8 @@ ARG DSPACE_PROXY_PORT=8080
 # Environment variables
 ENV DSPACE_VERSION=6.2 \
     DSPACE_GIT_URL=https://github.com/CICBA/DSpace.git \
-    DSPACE_HOME=/dspace
+    DSPACE_HOME=/dspace \
+    DSPACE_INSTALL=/tmp/dspace/install
 ENV CATALINA_OPTS="-Xmx512M -Dfile.encoding=UTF-8" \
     MAVEN_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1" \
     PATH=$CATALINA_HOME/bin:$DSPACE_HOME/bin:$PATH
@@ -43,40 +44,14 @@ RUN apt-get update && apt-get install -y \
 RUN useradd -r -s /bin/bash -m -d "$DSPACE_HOME" dspace \
     && chown -R dspace:dspace "$DSPACE_HOME" "$CATALINA_HOME"
 
-# Change to dspace user for build and install
-USER dspace
-
-# Clone DSpace source to $WORKDIR/dspace
-RUN git clone --depth=1 "$DSPACE_GIT_URL" dspace
-
-# Copy customized local.cfg (taken straight from the DSpace source
-# tree and modified only to add bits to make it easier to replace hostname
-# and port below)
-COPY config/local.cfg dspace
+# Copy customized Catalina configuration
 COPY config/webapps/xmlui.xml $CATALINA_HOME/conf/Catalina/localhost/xmlui.xml
 COPY config/webapps/solr.xml $CATALINA_HOME/conf/Catalina/localhost/solr.xml
 
-USER root
 
-RUN sed -i "s#docBase=\"\$DSPACE_HOME#docBase=\"$DSPACE_HOME#" $CATALINA_HOME/conf/Catalina/localhost/xmlui.xml
-RUN sed -i "s#docBase=\"\$DSPACE_HOME#docBase=\"$DSPACE_HOME#" $CATALINA_HOME/conf/Catalina/localhost/solr.xml
+RUN sed -i "s#docBase=\"\$DSPACE_HOME#docBase=\"$DSPACE_INSTALL#" $CATALINA_HOME/conf/Catalina/localhost/xmlui.xml
+RUN sed -i "s#docBase=\"\$DSPACE_HOME#docBase=\"$DSPACE_INSTALL#" $CATALINA_HOME/conf/Catalina/localhost/solr.xml
 
-USER dspace
-
-
-# Set DSpace hostname and port in build.properties
-RUN sed -i -e "s/DSPACE_HOSTNAME/$DSPACE_HOSTNAME/" -e "s/DSPACE_PROXY_PORT/$DSPACE_PROXY_PORT/" dspace/local.cfg
-
-# Install compiled applications to $CATALINA_HOME
-#RUN cd dspace/dspace/target/dspace-installer \
-#    && ant init_installation init_configs install_code copy_webapps init_geolite \
-#    && rm -rf $CATALINA_HOME/webapps \
-#    && mkdir $CATALINA_HOME/webapps \
-#    && mv -f $DSPACE_HOME/webapps/xmlui $CATALINA_HOME/webapps \
-#    && mv -f $DSPACE_HOME/webapps/solr $CATALINA_HOME/webapps
-
-# Change back to root user for cleanup
-USER root
 
 # Tweak default Tomcat server configuration
 COPY config/server.xml "$CATALINA_HOME"/conf/server.xml
@@ -93,7 +68,7 @@ COPY rootfs /
 RUN chown dspace:dspace $DSPACE_HOME
 
 # Make sure the crontab uses the correct DSpace directory
-RUN sed -i "s#DSPACE=/dspace#DSPACE=$DSPACE_HOME#" /etc/cron.d/dspace-maintenance-tasks
+RUN sed -i "s#DSPACE=/dspace#DSPACE=$DSPACE_INSTALL#" /etc/cron.d/dspace-maintenance-tasks
 
 WORKDIR $DSPACE_HOME
 
@@ -111,6 +86,6 @@ RUN echo "Debian GNU/Linux `cat /etc/debian_version` image. (`uname -rsv`)" >> /
     && echo "container as the dspace user, ie: docker exec -it -u dspace dspace /bin/bash" >> /root/.built
 
 EXPOSE 8080
-
+VOLUME /tmp/dspace
 # will run `start-dspace.sh` script as root
 CMD ["start-dspace.sh"]

@@ -31,7 +31,7 @@ services:
       - POSTGRES_DB_PORT=5432
       - POSTGRES_DB_HOST=dspace_db
     volumes:
-      #- ./dspace-source:/tmp/dspace/
+      - ./dspace-source:/tmp/dspace/
       - m2:/dspace/.m2/
       - ./custom_data/postgresql_import_sql/dspace_cic-2017-06-22_0840.sql:/tmp/dspace_data.sql
       #- ./custom_data/solr/statistics/data:/dspace/solr/statistics/data
